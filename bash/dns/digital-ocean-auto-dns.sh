@@ -1,23 +1,38 @@
 #!/usr/bin/env bash
 
-DOMAIN=${1}
-RECORD_ID=${2}
+TOKEN_FILE=${1}
+DOMAINS=${2}
 
-BEARER_TOKEN="XXX-YOUR-TOKEN-HERE-XXX"
-MYIP=$(curl -s http://whatismyip.akamai.com/)
-XYZIP=$(dig +short ${DOMAIN})
+GOOGLE_IP=$(curl -s http://whatismyip.akamai.com/)
 
-echo ${MYIP}
-echo ${XYZIP}
+function get_domain_id() {
+    DOMAIN=${1}
 
-if [ "${MYIP}" != "${XYZIP}" ]; then
-    echo "IP's don't match. Updating."
+    ID=$(curl -s https://api.digitalocean.com/v2/domains/${DOMAIN}/records?type=A \
+              -K ${TOKEN_FILE} \
+            | jq -r .domain_records[].id)
+    echo ${ID}
+}
 
-    curl -X PUT https://api.digitalocean.com/v2/domains/${DOMAIN}/records/${RECORD_ID} \
-        -H "Authorization: Bearer ${BEARER_TOKEN}" \
-        -H 'Content-type: application/json' \
-        -H 'cache-control: no-cache' \
-        -d "{\"data\": \"${MYIP}\"}"
+function update_domain_ip() {
+    DOMAIN_NAME=${1}
+    DOMAIN_ID=${2}
+
+    curl -s -X PUT https://api.digitalocean.com/v2/domains/${DOMAIN_NAME}/records/${DOMAIN_ID} \
+         -K ${TOKEN_FILE} \
+         -H "Content-type: application/json" \
+         -H "Cache-control: no-cache" \
+         -d "{\"data\": \"${GOOGLE_IP}\"}"
     echo
-fi
+}
+
+for D in ${DOMAINS}; do
+    DOMAIN_IP=$(dig +short ${D})
+    if [ "${DOMAIN_IP}" != "${GOOGLE_IP}" ]; then
+        DID=$(get_domain_id $D)
+        echo "Updating ${D} IP to ${GOOGLE_IP}"
+        RESPONSE=$(update_domain_ip ${D} ${DID})
+        echo ${RESPONSE}
+    fi
+done
 

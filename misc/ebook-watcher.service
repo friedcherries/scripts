@@ -1,5 +1,5 @@
 [Unit]
-Description=Service to moved downloaded ebooks to Calibre Auto-Import directory
+Description=Service to move downloaded ebooks to Calibre Auto-Import directory
 After=multi-user.target
 
 [Service]

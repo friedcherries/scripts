@@ -1,0 +1,11 @@
+[Unit]
+Description=Service to moved downloaded ebooks to Calibre Auto-Import directory
+After=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/local/bin/ebook-watcher.py
+
+[Install]
+WantedBy=multi-user.target
